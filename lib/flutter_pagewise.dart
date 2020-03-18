@@ -408,6 +408,7 @@ class PagewiseLoadController<T> extends ChangeNotifier {
   bool _hasMoreItems;
   Object _error;
   bool _isFetching;
+  bool _disposed = false;
 
   /// Called whenever a new page (or batch) is to be fetched
   ///
@@ -453,6 +454,7 @@ class PagewiseLoadController<T> extends ChangeNotifier {
     this._hasMoreItems = true;
     this._error = null;
     this._isFetching = false;
+    this._disposed = false;
     this.notifyListeners();
   }
 
@@ -464,8 +466,10 @@ class PagewiseLoadController<T> extends ChangeNotifier {
       List<T> page;
       try {
         page = await this.pageFuture(this._numberOfLoadedPages);
+        if (_disposed) return;
         this._numberOfLoadedPages++;
       } catch (error) {
+        if (_disposed) return;
         this._error = error;
         this._isFetching = false;
         this.notifyListeners();
@@ -502,6 +506,12 @@ class PagewiseLoadController<T> extends ChangeNotifier {
   void retry() {
     this._error = null;
     this.notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }
 
