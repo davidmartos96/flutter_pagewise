@@ -179,10 +179,10 @@ abstract class Pagewise<T> extends StatefulWidget {
   PagewiseState<T> createState() => PagewiseState<T>();
 }
 
-class PagewiseState<T> extends State<Pagewise<T>> {
+class PagewiseState<T> extends State<Pagewise<T /*!*/ >> {
   PagewiseLoadController<T> _controller;
 
-  PagewiseLoadController<T> get _effectiveController =>
+  PagewiseLoadController<T> /*!*/ get _effectiveController =>
       widget.pageLoadController ?? this._controller;
 
   VoidCallback _controllerListener;
@@ -212,7 +212,7 @@ class PagewiseState<T> extends State<Pagewise<T>> {
   }
 
   @override
-  void didUpdateWidget(Pagewise oldWidget) {
+  void didUpdateWidget(Pagewise<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.pageLoadController == null &&
         oldWidget.pageLoadController != null) {
@@ -415,10 +415,10 @@ class PagewiseLoadController<T> extends ChangeNotifier {
   /// It is provided with the page index, and expected to return a [Future](https://api.dartlang.org/stable/1.24.3/dart-async/Future-class.html) that
   /// resolves to a list of entries. Please make sure to return only [pageSize]
   /// or less entries (in the case of the last page) for each page.
-  final PageFuture<T> pageFuture;
+  final PageFuture<T> /*!*/ pageFuture;
 
   /// The number  of entries per page
-  final int pageSize;
+  final int /*!*/ pageSize;
 
   /// Creates a PagewiseLoadController.
   ///
@@ -556,22 +556,35 @@ class PagewiseListView<T> extends Pagewise<T> {
             errorBuilder: errorBuilder,
             noItemsFoundBuilder: noItemsFoundBuilder,
             builder: (PagewiseState<T> state) {
-              return ListView.builder(
-                  itemExtent: itemExtent,
-                  addAutomaticKeepAlives: addAutomaticKeepAlives,
-                  scrollDirection: scrollDirection,
-                  addRepaintBoundaries: addRepaintBoundaries,
-                  cacheExtent: cacheExtent,
-                  physics: physics,
-                  reverse: reverse,
-                  padding: padding,
-                  addSemanticIndexes: addSemanticIndexes,
-                  semanticChildCount: semanticChildCount,
-                  shrinkWrap: shrinkWrap,
-                  primary: primary,
-                  controller: controller,
-                  itemCount: state._itemCount,
-                  itemBuilder: state._itemBuilder);
+              final delegate = SliverChildBuilderDelegate(
+                state._itemBuilder,
+                addAutomaticKeepAlives: addAutomaticKeepAlives,
+                addRepaintBoundaries: addRepaintBoundaries,
+                addSemanticIndexes: addSemanticIndexes,
+                childCount: state._itemCount,
+              );
+
+              Widget sliver = itemExtent != null
+                  ? SliverFixedExtentList(
+                      delegate: delegate,
+                      itemExtent: itemExtent,
+                    )
+                  : SliverList(
+                      delegate: delegate,
+                    );
+
+              return _buildScrollView(
+                sliver: sliver,
+                padding: padding,
+                controller: controller,
+                semanticChildCount: semanticChildCount,
+                shrinkWrap: shrinkWrap,
+                primary: primary,
+                scrollDirection: scrollDirection,
+                cacheExtent: cacheExtent,
+                physics: physics,
+                reverse: reverse,
+              );
             });
 }
 
@@ -619,28 +632,36 @@ class PagewiseGridView<T> extends Pagewise<T> {
             errorBuilder: errorBuilder,
             noItemsFoundBuilder: noItemsFoundBuilder,
             builder: (PagewiseState<T> state) {
-              return GridView.builder(
-                  reverse: reverse,
-                  physics: physics,
-                  cacheExtent: cacheExtent,
-                  addRepaintBoundaries: addRepaintBoundaries,
-                  scrollDirection: scrollDirection,
+              Widget sliver = SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  state._itemBuilder,
                   addAutomaticKeepAlives: addAutomaticKeepAlives,
-                  controller: controller,
-                  primary: primary,
-                  shrinkWrap: shrinkWrap,
-                  padding: padding,
+                  addRepaintBoundaries: addRepaintBoundaries,
                   addSemanticIndexes: addSemanticIndexes,
-                  semanticChildCount: semanticChildCount,
-                  gridDelegate:
-                      SliverGridDelegateWithFixedCrossAxisCountAndLoading(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: childAspectRatio,
-                          crossAxisSpacing: crossAxisSpacing,
-                          mainAxisSpacing: mainAxisSpacing,
-                          itemCount: state._itemCount),
+                  childCount: state._itemCount,
+                ),
+                gridDelegate:
+                    SliverGridDelegateWithFixedCrossAxisCountAndLoading(
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: childAspectRatio,
+                  crossAxisSpacing: crossAxisSpacing,
+                  mainAxisSpacing: mainAxisSpacing,
                   itemCount: state._itemCount,
-                  itemBuilder: state._itemBuilder);
+                ),
+              );
+
+              return _buildScrollView(
+                sliver: sliver,
+                padding: padding,
+                controller: controller,
+                semanticChildCount: semanticChildCount,
+                shrinkWrap: shrinkWrap,
+                primary: primary,
+                scrollDirection: scrollDirection,
+                cacheExtent: cacheExtent,
+                physics: physics,
+                reverse: reverse,
+              );
             });
 
   /// Creates a Pagewise GridView with a maxCrossAxisExtent.
@@ -686,28 +707,36 @@ class PagewiseGridView<T> extends Pagewise<T> {
             errorBuilder: errorBuilder,
             noItemsFoundBuilder: noItemsFoundBuilder,
             builder: (PagewiseState<T> state) {
-              return GridView.builder(
-                  reverse: reverse,
-                  physics: physics,
-                  cacheExtent: cacheExtent,
-                  addRepaintBoundaries: addRepaintBoundaries,
-                  scrollDirection: scrollDirection,
+              Widget sliver = SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  state._itemBuilder,
                   addAutomaticKeepAlives: addAutomaticKeepAlives,
+                  addRepaintBoundaries: addRepaintBoundaries,
                   addSemanticIndexes: addSemanticIndexes,
-                  semanticChildCount: semanticChildCount,
-                  controller: controller,
-                  primary: primary,
-                  shrinkWrap: shrinkWrap,
-                  padding: padding,
-                  gridDelegate:
-                      SliverGridDelegateWithMaxCrossAxisExtentAndLoading(
-                          maxCrossAxisExtent: maxCrossAxisExtent,
-                          childAspectRatio: childAspectRatio,
-                          crossAxisSpacing: crossAxisSpacing,
-                          mainAxisSpacing: mainAxisSpacing,
-                          itemCount: state._itemCount),
+                  childCount: state._itemCount,
+                ),
+                gridDelegate:
+                    SliverGridDelegateWithMaxCrossAxisExtentAndLoading(
+                  maxCrossAxisExtent: maxCrossAxisExtent,
+                  childAspectRatio: childAspectRatio,
+                  crossAxisSpacing: crossAxisSpacing,
+                  mainAxisSpacing: mainAxisSpacing,
                   itemCount: state._itemCount,
-                  itemBuilder: state._itemBuilder);
+                ),
+              );
+
+              return _buildScrollView(
+                sliver: sliver,
+                padding: padding,
+                controller: controller,
+                semanticChildCount: semanticChildCount,
+                shrinkWrap: shrinkWrap,
+                primary: primary,
+                scrollDirection: scrollDirection,
+                cacheExtent: cacheExtent,
+                physics: physics,
+                reverse: reverse,
+              );
             });
 }
 
@@ -869,4 +898,35 @@ class PagewiseSliverGrid<T> extends Pagewise<T> {
                         itemCount: state._itemCount),
               );
             });
+}
+
+Widget _buildScrollView({
+  @required Widget sliver,
+  EdgeInsetsGeometry padding,
+  bool primary,
+  int semanticChildCount,
+  bool shrinkWrap: false,
+  ScrollController controller,
+  Axis scrollDirection: Axis.vertical,
+  double cacheExtent,
+  ScrollPhysics physics,
+  bool reverse: false,
+}) {
+  if (padding != null) {
+    sliver = SliverPadding(
+      padding: padding,
+      sliver: sliver,
+    );
+  }
+  return CustomScrollView(
+    controller: controller,
+    semanticChildCount: semanticChildCount,
+    shrinkWrap: shrinkWrap,
+    primary: primary,
+    slivers: [sliver],
+    scrollDirection: scrollDirection,
+    cacheExtent: cacheExtent,
+    physics: physics,
+    reverse: reverse,
+  );
 }
