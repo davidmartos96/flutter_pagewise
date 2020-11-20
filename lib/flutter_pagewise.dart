@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pagewise/helpers/grid_helpers.dart';
 
 typedef Widget ItemBuilder<T>(BuildContext context, T entry, int index);
-typedef Future<List<T>> PageFuture<T>(int pageIndex);
+typedef Future<List<T>/*?*/> PageFuture<T>(int/*!*/ pageIndex);
 typedef Widget ErrorBuilder(BuildContext context, Object error);
 typedef Widget LoadingBuilder(BuildContext context);
 typedef Widget NoItemsFoundBuilder(BuildContext context);
@@ -463,7 +463,7 @@ class PagewiseLoadController<T> extends ChangeNotifier {
     if (!this._isFetching) {
       this._isFetching = true;
 
-      List<T> page;
+      List<T>/*?*/ page;
       try {
         page = await this.pageFuture(this._numberOfLoadedPages);
         if (_disposed) return;
@@ -495,7 +495,9 @@ class PagewiseLoadController<T> extends ChangeNotifier {
       if (length == 0) {
         this._hasMoreItems = false;
       } else {
-        this._loadedItems.addAll(page);
+        if (page != null) {
+          this._loadedItems.addAll(page);
+        }
       }
       this._isFetching = false;
       notifyListeners();
